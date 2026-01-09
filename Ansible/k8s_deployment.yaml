@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: flask-app
-          image: docker.io/snagineni03/myflaskapp:8
+          image: docker.io/snagineni03/myflaskapp:9
           ports:
             - containerPort: 5001
 
