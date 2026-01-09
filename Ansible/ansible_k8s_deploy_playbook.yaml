@@ -10,7 +10,7 @@
       register: deployment_result
     
     - name: Apply Kubernetes Service
-      ansible.builtin.command: kubectl apply -f {{ playbook_dir }}/service.yaml
+      ansible.builtin.command: kubectl apply -f {{ playbook_dir }}/k8s_service.yaml
       register: service_result
     
     - name: Wait for LoadBalancer to be ready
