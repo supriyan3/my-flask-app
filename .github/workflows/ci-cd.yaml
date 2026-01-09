@@ -69,7 +69,8 @@ jobs:
       run: |
         git config user.name "supriya nageneni"
         git config user.email "snageneni@gmail.com"
-
+        git pull origin main --rebase
+        
         sed -i "s|image:.*|image: $REGISTRY/$IMAGE_NAME:$IMAGE_TAG|g" Ansible/k8s_deployment.yaml
 
         git add Ansible/k8s_deployment.yaml
