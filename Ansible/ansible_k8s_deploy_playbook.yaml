@@ -1,0 +1,24 @@
+# ---
+# - name: Deploy Application into eks cluster 
+#   hosts: localhost
+#   connection: local
+#   gather_facts: no  # No need to gather facts for this playbook
+#   become: yes 
+#   tasks:
+#     - name: Copy k8s_deployment.yaml file to eks cluster
+#       copy:
+#         src: /var/lib/jenkins/workspace/cicdprject/Ansible/k8s_deployment.yaml 
+#         dest: /home/ec2-user/
+
+#     - name: Apply Deployment
+#       ansible.builtin.command: kubectl apply -f /home/ec2-user/k8s_deployment.yaml
+    
+---
+- name: Deploy Application into EKS cluster
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+
+    - name: Apply Kubernetes Deployment
+      ansible.builtin.command: kubectl apply -f /home/runner/work/Ansible_k8s_gha/Ansible_k8s_gha/Ansible/k8s_deployment.yaml
