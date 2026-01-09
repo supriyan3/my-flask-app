@@ -6,4 +6,4 @@
   tasks:
 
     - name: Apply Kubernetes Deployment
-      ansible.builtin.command: kubectl apply -f Ansible/k8s_deployment.yaml
+      ansible.builtin.command: kubectl apply -f /home/ec2-user/my-flask-app/Ansible/k8s_deployment.yaml
