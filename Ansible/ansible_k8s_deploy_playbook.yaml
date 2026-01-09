@@ -6,6 +6,7 @@
 
   vars:
     k8s_namespace: default
+    playbook_dir: "{{ playbook_dir }}"
     deployment_file: Ansible/k8s_deployment.yaml
     service_file: Ansible/k8s_service.yaml
 
@@ -16,7 +17,8 @@
         kubeconfig: "{{ lookup('env','HOME') }}/.kube/config"
         state: present
         namespace: "{{ k8s_namespace }}"
-        definition: "{{ lookup('file', deployment_file) | from_yaml }}"
+        definition: "{{ lookup('file', playbook_dir + '/k8s_deployment.yaml') | from_yaml }}"
+
 
     - name: Apply Kubernetes Service
       k8s:
