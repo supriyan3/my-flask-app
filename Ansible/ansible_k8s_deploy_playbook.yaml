@@ -1,24 +1,35 @@
-# ---
-# - name: Deploy Application into eks cluster 
-#   hosts: localhost
-#   connection: local
-#   gather_facts: no  # No need to gather facts for this playbook
-#   become: yes 
-#   tasks:
-#     - name: Copy k8s_deployment.yaml file to eks cluster
-#       copy:
-#         src: /var/lib/jenkins/workspace/cicdprject/Ansible/k8s_deployment.yaml 
-#         dest: /home/ec2-user/
-
-#     - name: Apply Deployment
-#       ansible.builtin.command: kubectl apply -f /home/ec2-user/k8s_deployment.yaml
-    
 ---
-- name: Deploy Application into EKS cluster
+- name: Deploy Flask app to Kubernetes (EKS)
   hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: false
+
+  vars:
+    k8s_namespace: default
+    deployment_file: Ansible/k8s_deployment.yaml
+    service_file: Ansible/k8s_service.yaml
+
   tasks:
 
     - name: Apply Kubernetes Deployment
-      ansible.builtin.command: kubectl apply -f /home/runner/work/Ansible_k8s_gha/Ansible_k8s_gha/Ansible/k8s_deployment.yaml
+      k8s:
+        kubeconfig: "{{ lookup('env','HOME') }}/.kube/config"
+        state: present
+        namespace: "{{ k8s_namespace }}"
+        definition: "{{ lookup('file', deployment_file) | from_yaml }}"
+
+    - name: Apply Kubernetes Service
+      k8s:
+        kubeconfig: "{{ lookup('env','HOME') }}/.kube/config"
+        state: present
+        namespace: "{{ k8s_namespace }}"
+        definition: "{{ lookup('file', service_file) | from_yaml }}"
+
+    - name: Wait for Deployment rollout to complete
+      shell: |
+        kubectl rollout status deployment/{{ lookup('file', deployment_file) | from_yaml | json_query('metadata.name') }} -n {{ k8s_namespace }}
+      register: rollout_status
+      retries: 5
+      delay: 5
+      until: rollout_status.rc == 0
+
