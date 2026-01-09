@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: flask-app
-          image: docker.io/snagineni03/myflaskapp:latest  # CI replaces this dynamically
+          image: docker.io/snagineni03/myflaskapp:6
           ports:
             - containerPort: 5001
 
