@@ -6,4 +6,4 @@
   tasks:
 
     - name: Apply Kubernetes Deployment
-      ansible.builtin.command: kubectl apply -f /home/runner/work/Ansible_k8s_gha/Ansible_k8s_gha/Ansible/k8s_deployment.yaml
+      ansible.builtin.command: kubectl apply -f Ansible/k8s_deployment.yaml
