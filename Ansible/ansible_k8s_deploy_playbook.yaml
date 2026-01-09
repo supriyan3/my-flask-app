@@ -3,7 +3,12 @@
   hosts: localhost
   connection: local
   gather_facts: no
+  
   tasks:
-
     - name: Apply Kubernetes Deployment
-      ansible.builtin.command: kubectl apply -f /home/ec2-user/my-flask-app/Ansible/k8s_deployment.yaml
+      command: kubectl apply -f {{ playbook_dir }}/k8s_deployment.yaml
+      register: deployment_result
+    
+    - name: Show deployment result
+      debug:
+        var: deployment_result.stdout_lines
