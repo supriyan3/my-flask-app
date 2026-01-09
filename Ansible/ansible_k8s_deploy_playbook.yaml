@@ -1,21 +1,9 @@
 ---
-- name: Deploy Flask app to Kubernetes (EKS)
+- name: Deploy Application into EKS cluster
   hosts: localhost
   connection: local
-  gather_facts: false
-  vars:
-    deployment_file: "Ansible/k8s_deployment.yaml"
-    service_file: "Ansible/k8s_service.yaml"
-    k8s_namespace: default
+  gather_facts: no
   tasks:
-    - name: Apply Kubernetes Deployment
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ k8s_namespace }}"
-        definition: "{{ lookup('file', deployment_file) | from_yaml }}"
 
-    - name: Apply Kubernetes Service
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ k8s_namespace }}"
-        definition: "{{ lookup('file', service_file) | from_yaml }}"
+    - name: Apply Kubernetes Deployment
+      ansible.builtin.command: kubectl apply -f /home/runner/work/Ansible_k8s_gha/Ansible_k8s_gha/Ansible/k8s_deployment.yaml
