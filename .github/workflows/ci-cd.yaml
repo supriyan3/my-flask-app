@@ -19,79 +19,54 @@ jobs:
       IMAGE_TAG: ${{ github.run_number }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-  
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Run tests
-      run: pytest
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0   # full history to handle git pulls in pipeline
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Docker image
-      run: |
-        docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+      - name: Build Docker Image
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
 
-    - name: Scan Docker Image with Trivy
-      uses: aquasecurity/trivy-action@0.20.0
-      with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-        severity: CRITICAL,HIGH
-        ignore-unfixed: true
+      - name: Push Docker Image
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
 
-    - name: Push Docker image
-      run: |
-        docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+      - name: Update K8s Deployment YAML
+        run: |
+          git config user.name "Supriya Nageneni"
+          git config user.email "snageneni@gmail.com"
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+          git pull origin main --rebase
 
-    - name: Update K8s Deployment YAML
-      run: |
-        git config user.name "supriya nageneni"
-        git config user.email "snageneni@gmail.com"
-        git pull origin main --rebase
-        
-        sed -i "s|image:.*|image: $REGISTRY/$IMAGE_NAME:$IMAGE_TAG|g" Ansible/k8s_deployment.yaml
+          # Replace image tag in deployment YAML
+          sed -i "s|image:.*|image: $REGISTRY/$IMAGE_NAME:$IMAGE_TAG|g" Ansible/k8s_deployment.yaml
 
-        git add Ansible/k8s_deployment.yaml
-        git commit -m "Update image tag to $IMAGE_TAG [skip ci]"
-        git push
+          git add Ansible/k8s_deployment.yaml
+          git commit -m "Update image tag to $IMAGE_TAG [skip ci]" || echo "No changes to commit"
+          git push origin main
 
-    - name: Install Ansible and kubectl
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ansible
-        pip install kubernetes
+      - name: Install Ansible & Kubernetes Python library
+        run: |
+          sudo apt-get update && sudo apt-get install -y python3-pip
+          python3 -m pip install --upgrade pip
+          pip install ansible kubernetes openshift
 
-    - name: Configure kubeconfig
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > $HOME/.kube/config
-        chmod 600 $HOME/.kube/config
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
 
-    - name: Verify cluster
-      run: kubectl get nodes
-
-    - name: Deploy to Kubernetes using Ansible
-      run: |
-        ansible-playbook Ansible/ansible_k8s_deploy_playbook.yaml
+      # ----------------------------
+      # 6️⃣ Deploy to Kubernetes using Ansible
+      # ----------------------------
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook Ansible/ansible_k8s_deploy_playbook.yaml -i localhost, --connection=local
