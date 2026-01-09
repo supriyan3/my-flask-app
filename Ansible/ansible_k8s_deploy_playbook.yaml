@@ -3,35 +3,19 @@
   hosts: localhost
   connection: local
   gather_facts: false
-
   vars:
+    deployment_file: "Ansible/k8s_deployment.yaml"
+    service_file: "Ansible/k8s_service.yaml"
     k8s_namespace: default
-    playbook_dir: "{{ playbook_dir }}"
-    deployment_file: Ansible/k8s_deployment.yaml
-    service_file: Ansible/k8s_service.yaml
-
   tasks:
-
     - name: Apply Kubernetes Deployment
-      k8s:
-        kubeconfig: "{{ lookup('env','HOME') }}/.kube/config"
+      kubernetes.core.k8s:
         state: present
         namespace: "{{ k8s_namespace }}"
-        definition: "{{ lookup('file', playbook_dir + '/k8s_deployment.yaml') | from_yaml }}"
-
+        definition: "{{ lookup('file', deployment_file) | from_yaml }}"
 
     - name: Apply Kubernetes Service
-      k8s:
-        kubeconfig: "{{ lookup('env','HOME') }}/.kube/config"
+      kubernetes.core.k8s:
         state: present
         namespace: "{{ k8s_namespace }}"
         definition: "{{ lookup('file', service_file) | from_yaml }}"
-
-    - name: Wait for Deployment rollout to complete
-      shell: |
-        kubectl rollout status deployment/{{ lookup('file', deployment_file) | from_yaml | json_query('metadata.name') }} -n {{ k8s_namespace }}
-      register: rollout_status
-      retries: 5
-      delay: 5
-      until: rollout_status.rc == 0
-
